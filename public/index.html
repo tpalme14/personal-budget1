@@ -85,12 +85,18 @@
                 <p>
                     What if your clothing budget ended? You will get an alert. The goal is to never go over the budget.
                 </p>
-            </article>
-    
+            </article>  
+
             <article>
-                <h1>Results</h1>
+                <h1>New Budget Entry</h1>
                 <p>
-                    People who stick to a financial plan, budgeting every expense, get out of debt faster! Also, they to live happier lives... since they expend without guilt or fear... because they know it is all good and accounted for.
+                    <form id="budgetForm">
+                        <input type="number" id="id" placeholder="ID" required>
+                        <input type="text" id="color" placeholder="Color (Hex)" required>
+                        <input type="text" id="title" placeholder="Title" required>
+                        <input type="number" id="budget" placeholder="Budget Amount" required>
+                        <button type="submit" onclick="location.reload()">Add Budget Entry</button>
+                    </form>
                 </p>
             </article>
 
@@ -101,7 +107,7 @@
                 </p>
             </article>
             <article>
-                <h1 style="text-align: center;">Extra Chart</h1>
+                <h1>Extra Chart</h1>
                 <p>
                     <style>
                         
@@ -162,14 +168,14 @@
                         
                         var key = function(d){ return d.data.title; };
 
-                        var color = d3.scale.ordinal()
-                            .range(['#8ab17d',
-                                    '#588b8b',
-                                    '#ffd5c2',
-                                    '#f28f3b',
-                                    '#c8553d',
-                                    '#2d3047',
-                                    '#93b7be',]);
+                        // var color = d3.scale.ordinal()
+                        //     .range(['#8ab17d',
+                        //             '#588b8b',
+                        //             '#ffd5c2',
+                        //             '#f28f3b',
+                        //             '#c8553d',
+                        //             '#2d3047',
+                        //             '#93b7be',]);
 
                         function update(data) {                        
                             var slice = svg.select(".slices").selectAll("path.slice")
@@ -177,7 +183,7 @@
                         
                             slice.enter()
                                 .insert("path")
-                                .style("fill", function(d) { return color(d.data.title); })
+                                .style("fill", function(d) { return `#${d.data.color}`; })
                                 .attr("class", "slice");
                         
                             slice		
@@ -279,18 +285,41 @@
     </footer>
 
     <script>
+        document.getElementById('budgetForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const id = document.getElementById('id').value;
+            const color = document.getElementById('color').value;
+            const title = document.getElementById('title').value;
+            const budget = document.getElementById('budget').value;
+
+            axios.post('/budget', {
+                id: Number(id),
+                color: color,
+                title: title,
+                budget: Number(budget)
+            })
+            .then(response => {
+                console.log(response.data.message)
+            })
+            .catch(error => {
+                console.log("Error adding budget entry:", error);
+            });
+        });
+    </script>
+    <script>
         var dataSource = {
             datasets: [
                 {
                     data: [],
                     backgroundColor: [
-                        '#8ab17d',
-                        '#588b8b',
-                        '#ffd5c2',
-                        '#f28f3b',
-                        '#c8553d',
-                        '#2d3047',
-                        '#93b7be',
+                        // '#8ab17d',
+                        // '#588b8b',
+                        // '#ffd5c2',
+                        // '#f28f3b',
+                        // '#c8553d',
+                        // '#2d3047',
+                        // '#93b7be',
                     ],
                 }
             ],
@@ -309,11 +338,18 @@
             axios.get('/budget')
             .then(function (res) {
                 console.log(res);
+                dataSource.datasets[0].data = [];
+                dataSource.labels = [];
+                dataSource.datasets[0].backgroundColor = [];
                 for (var i = 0; i < res.data.myBudget.length; i++) {
-                    dataSource.datasets[0].data[i] = res.data.myBudget[i].budget;
-                    dataSource.labels[i] = res.data.myBudget[i].title;
+                    dataSource.datasets[0].data.push(res.data.myBudget[i].budget);
+                    dataSource.labels.push(res.data.myBudget[i].title);
+                    dataSource.datasets[0].backgroundColor.push(`#${res.data.myBudget[i].color}`);
                 }
                 createChart();
+            })
+            .catch(function (error) {
+                console.error("Error fetching budget data:", error);
             });
         }
         getBudget();
